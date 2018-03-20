@@ -1,6 +1,12 @@
 const express = require('express');
 const knex = require('knex');
+const bookshelf = require('bookshelf')(connect());
+
 const app = express();
+const Genre = bookshelf.Model.extend({
+  tableName: 'genres',
+  idAttribute: 'GenreId'
+});
 
 app.get('/genres', function(request, response) {
   let connection = connect();
@@ -37,6 +43,30 @@ app.get('/genres/:id', function(request, response) {
     //   error: 'Cannot find genre ' + id
     // });
   });
+});
+
+app.get('/v2/genres', function(request, response) {
+  Genre.fetchAll().then(function(genres) {
+    response.json(genres);
+  });
+});
+
+app.get('/v2/genres/:id', function(request, response) {
+  let id = request.params.id;
+  let genre = new Genre({ GenreId: id });
+  genre.fetch()
+    .then(function(genre) {
+      if (!genre) {
+        throw new Error();
+      } else {
+        response.json(genre);
+      }
+    })
+    .catch(function() {
+      response.status(404).json({
+        error: 'Song not found'
+      });
+    });
 });
 
 function connect() {
